@@ -3,6 +3,7 @@ from flask import Flask
 # pimoroni imports
 # particulate sensor
 from pms5003 import PMS5003, ReadTimeoutError
+from enviroplus import gas
 import logging
 ########
 
@@ -19,8 +20,22 @@ logging.info("app started")
 pms5003 = PMS5003()
 #######
 
+@application.route("/gas")
+def gas_route():
+    # QUESTION: are there any exceptions to handle?
+    readings = gas.read_all()
+    logging.info(readings)
+
+    detailsToReturn = {"adc":readings.adc,
+                       "nh3":readings.nh3,
+                       "oxidising":readings.oxidising,
+                       "reducing":readings.reducing}
+
+    # QUESTION: do we want to use jsonify?
+    return detailsToReturn
+
 @application.route("/particulates")
-def particulates():
+def particulates_route():
     global pms5003
 
     try:
@@ -32,6 +47,7 @@ def particulates():
         # QUESTION: should we handle the other possible errors
         pms5003 = PMS5003()
 
+    # TODO Rename these as per the documented spec
     detailsToReturn = {"PM1.0":readings.pm_ug_per_m3(1.0),
                        "PM2.5":readings.pm_ug_per_m3(2.5),
                        "PM10":readings.pm_ug_per_m3(10),
@@ -50,5 +66,4 @@ def particulates():
 
 if __name__ == "__main__":
   application.run(debug=True, host='0.0.0.0')
-
 
